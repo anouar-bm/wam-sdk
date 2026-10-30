@@ -132,7 +132,8 @@ export default {
   // snapshotSerializers: [],
 
   // The test environment that will be used for testing
-  testEnvironment: "jsdom",
+  // The specs exercise ring buffers and the interpolator only; DOM code runs in the browser suite (test:browser).
+  testEnvironment: "node",
 
   // Options that will be passed to the testEnvironment
   // testEnvironmentOptions: {},
@@ -168,7 +169,7 @@ export default {
 
   // A map from regular expressions to paths to transformers
   transform: {
-    "^.+\\.(ts|js)x?$": "esbuild-jest"
+    "^.+\\.(ts|js)x?$": "@swc/jest"
   }
 
   // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation

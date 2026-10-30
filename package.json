@@ -28,12 +28,13 @@
   "scriptPreprocessor": "node_modules/babel-jest",
   "devDependencies": {
     "@playwright/test": "^1.64.1",
-    "@types/jest": "^27.0.3",
+    "@swc/core": "^1.16.20",
+    "@swc/jest": "^0.2.39",
+    "@types/jest": "^30.0.0",
     "@webaudiomodules/api": "^2.0.0-alpha.6",
     "dts-bundle-generator": "^6.2.0",
     "esbuild": "^0.14.2",
-    "esbuild-jest": "^0.5.0",
-    "jest": "^27.4.4",
+    "jest": "^30.5.2",
     "typescript": "^4.5.3"
   },
   "module": "dist",
