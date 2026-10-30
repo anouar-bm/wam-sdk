@@ -1,15 +1,15 @@
-/** @typedef {import('@webaudiomodules/api').WamProcessor} IWamProcessor */
-/** @typedef {typeof import('@webaudiomodules/api').WamProcessor} WamProcessorConstructor */
-/** @typedef {import('@webaudiomodules/api').WamParameter} WamParameter */
-/** @typedef {import('@webaudiomodules/api').WamParameterInfoMap} WamParameterInfoMap */
-/** @typedef {import('@webaudiomodules/api').WamParameterDataMap} WamParameterDataMap */
-/** @typedef {import('@webaudiomodules/api').WamParameterData} WamParameterData */
-/** @typedef {import('@webaudiomodules/api').WamParameterMap} WamParameterMap */
-/** @typedef {import('@webaudiomodules/api').WamEvent} WamEvent */
-/** @typedef {import('@webaudiomodules/api').WamTransportData} WamTransportData */
-/** @typedef {import('@webaudiomodules/api').WamMidiData} WamMidiData */
-/** @typedef {import('@webaudiomodules/api').WamBinaryData} WamBinaryData */
-/** @typedef {import('@webaudiomodules/api').AudioWorkletGlobalScope} AudioWorkletGlobalScope */
+/** @typedef {import('wam-api').WamProcessor} IWamProcessor */
+/** @typedef {typeof import('wam-api').WamProcessor} WamProcessorConstructor */
+/** @typedef {import('wam-api').WamParameter} WamParameter */
+/** @typedef {import('wam-api').WamParameterInfoMap} WamParameterInfoMap */
+/** @typedef {import('wam-api').WamParameterDataMap} WamParameterDataMap */
+/** @typedef {import('wam-api').WamParameterData} WamParameterData */
+/** @typedef {import('wam-api').WamParameterMap} WamParameterMap */
+/** @typedef {import('wam-api').WamEvent} WamEvent */
+/** @typedef {import('wam-api').WamTransportData} WamTransportData */
+/** @typedef {import('wam-api').WamMidiData} WamMidiData */
+/** @typedef {import('wam-api').WamBinaryData} WamBinaryData */
+/** @typedef {import('wam-api').AudioWorkletGlobalScope} AudioWorkletGlobalScope */
 /** @typedef {import('./types').PendingWamEvent} PendingWamEvent */
 /** @typedef {import('./types').ProcessingSlice} ProcessingSlice */
 /** @typedef {import('./types').WamParameterInterpolatorMap} WamParameterInterpolatorMap */

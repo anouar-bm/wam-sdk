@@ -1,9 +1,9 @@
-/** @typedef {import('@webaudiomodules/api').WamNode} IWamNode */
-/** @typedef {import('@webaudiomodules/api').WebAudioModule} WebAudioModule */
-/** @typedef {import('@webaudiomodules/api').WamParameterInfoMap} WamParameterInfoMap */
-/** @typedef {import('@webaudiomodules/api').WamParameterDataMap} WamParameterDataMap */
-/** @typedef {import('@webaudiomodules/api').WamEvent} WamEvent */
-/** @typedef {import('@webaudiomodules/api').WamEventType} WamEventType */
+/** @typedef {import('wam-api').WamNode} IWamNode */
+/** @typedef {import('wam-api').WebAudioModule} WebAudioModule */
+/** @typedef {import('wam-api').WamParameterInfoMap} WamParameterInfoMap */
+/** @typedef {import('wam-api').WamParameterDataMap} WamParameterDataMap */
+/** @typedef {import('wam-api').WamEvent} WamEvent */
+/** @typedef {import('wam-api').WamEventType} WamEventType */
 /** @typedef {import('./types').WamEventRingBuffer} WamEventRingBuffer */
 
 import addFunctionModule from './addFunctionModule.js';

@@ -5,7 +5,9 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const packageFilePath = path.join(__dirname, '../node_modules/@webaudiomodules/api/package.json');
+// WamEnv.apiVersion = the installed wam-api version (the API this SDK implements), e.g. "2.0.0-beta.0".
+// Hosts only read this string; plugin compatibility uses the descriptor's apiVersion ("2.0.0").
+const packageFilePath = path.join(__dirname, '../node_modules/wam-api/package.json');
 const { version } = JSON.parse(fs.readFileSync(packageFilePath, 'utf-8'));
 
 const versionFilePath = path.join(__dirname, './apiVersion.js');
