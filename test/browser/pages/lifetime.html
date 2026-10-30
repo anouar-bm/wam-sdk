@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>lifetime</title>
+	<script type="module">
+		import { createGainWam } from '../fixtures/gain-wam.js';
+		import { expectSamples, runPageTest } from '../lib/audit.js';
+
+		// Repeated create/destroy on one context must not break later
+		// instances, and destroy() must be safe to call twice.
+		// Model: WPT audioworkletnode-lifetime.
+		const sampleRate = 48000;
+		const length = 512;
+		const cycles = 20;
+
+		runPageTest(async () => {
+			const context = new OfflineAudioContext({ numberOfChannels: 1, length, sampleRate });
+			for (let i = 0; i < cycles; i++) {
+				const wam = await createGainWam(context);
+				wam.audioNode.connect(context.destination);
+				wam.audioNode.destroy();
+				wam.audioNode.destroy();
+			}
+			const live = await createGainWam(context);
+			const source = new ConstantSourceNode(context, { offset: 1 });
+			source.connect(live.audioNode).connect(context.destination);
+			source.start(0);
+			const rendered = await context.startRendering();
+			const result = expectSamples(rendered.getChannelData(0), new Float32Array(length).fill(0.5), 0);
+			return result.pass ? { pass: true, message: `${cycles} create/destroy cycles, then ${result.message}` } : result;
+		});
+	</script>
+</head>
+<body></body>
+</html>

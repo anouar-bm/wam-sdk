@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="modes" content="plain isolated">
+	<title>gain-impulse</title>
+	<script type="module">
+		import { createGainWam } from '../fixtures/gain-wam.js';
+		import { expectSamples, runPageTest } from '../lib/audit.js';
+
+		// Impulses through the fixture WAM at default gain 0.5, rendered offline.
+		// Impulse positions cover the first sample, a mid-quantum sample and
+		// both sides of a 128-frame quantum boundary.
+		const sampleRate = 48000;
+		const length = 1024;
+		const impulses = [0, 77, 127, 128, 900];
+		const gain = 0.5;
+
+		runPageTest(async () => {
+			const context = new OfflineAudioContext({ numberOfChannels: 1, length, sampleRate });
+			const wam = await createGainWam(context);
+
+			const input = context.createBuffer(1, length, sampleRate);
+			const inputData = input.getChannelData(0);
+			for (const i of impulses) inputData[i] = 1;
+			const source = new AudioBufferSourceNode(context, { buffer: input });
+			source.connect(wam.audioNode).connect(context.destination);
+			source.start(0);
+
+			const rendered = await context.startRendering();
+			const expected = new Float32Array(length);
+			for (const i of impulses) expected[i] = gain;
+			// 1 * 0.5 is exact in float32, so no tolerance is needed.
+			return expectSamples(rendered.getChannelData(0), expected, 0);
+		});
+	</script>
+</head>
+<body></body>
+</html>

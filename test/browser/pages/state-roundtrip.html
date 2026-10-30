@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>state-roundtrip</title>
+	<script type="module">
+		import { createGainWam } from '../fixtures/gain-wam.js';
+		import { expectSamples, runPageTest } from '../lib/audit.js';
+
+		// setState -> getState returns the same values, a second instance
+		// restored from that state renders identically, and normalized
+		// values map onto the parameter range.
+		const sampleRate = 48000;
+		const length = 256;
+
+		async function renderWithState(state) {
+			const context = new OfflineAudioContext({ numberOfChannels: 1, length, sampleRate });
+			const wam = await createGainWam(context);
+			await wam.audioNode.setState(state);
+			const source = new ConstantSourceNode(context, { offset: 1 });
+			source.connect(wam.audioNode).connect(context.destination);
+			source.start(0);
+			const savedState = await wam.audioNode.getState();
+			const normalized = await wam.audioNode.getParameterValues(true, 'gain');
+			const rendered = await context.startRendering();
+			return { savedState, normalized, samples: rendered.getChannelData(0) };
+		}
+
+		runPageTest(async () => {
+			// 0.25 is exact in float32 and inside the 0..1 range.
+			const state = { parameterValues: { gain: { id: 'gain', value: 0.25, normalized: false } } };
+			const first = await renderWithState(state);
+			const got = first.savedState.parameterValues.gain;
+			if (got.value !== 0.25 || got.normalized !== false) {
+				return { pass: false, message: `getState gain ${JSON.stringify(got)}, expected value 0.25 normalized false` };
+			}
+			if (first.normalized.gain.value !== 0.25) {
+				return { pass: false, message: `normalized gain ${first.normalized.gain.value}, expected 0.25 for range 0..1` };
+			}
+			const firstAudio = expectSamples(first.samples, new Float32Array(length).fill(0.25), 0);
+			if (!firstAudio.pass) return firstAudio;
+
+			const second = await renderWithState(first.savedState);
+			const secondAudio = expectSamples(second.samples, first.samples, 0);
+			if (!secondAudio.pass) return { pass: false, message: `restored instance differs: ${secondAudio.message}` };
+			return { pass: true, message: 'state round-trips and restores identical audio' };
+		});
+	</script>
+</head>
+<body></body>
+</html>
