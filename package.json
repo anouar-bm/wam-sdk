@@ -8,6 +8,7 @@
   "scripts": {
     "prebuild": "node src/prebuild.js",
     "build": "esbuild src/index.js --target=esnext --bundle --sourcemap --outdir=dist --format=esm",
+    "typecheck": "tsc --noEmit -p .",
     "test": "jest",
     "test:browser": "npm run build && playwright test --project=chromium --project=firefox",
     "bench:micro": "node bench/micro.mjs",
@@ -32,10 +33,9 @@
     "@swc/jest": "^0.2.39",
     "@types/jest": "^30.0.0",
     "@webaudiomodules/api": "^2.0.0-alpha.6",
-    "dts-bundle-generator": "^6.2.0",
     "esbuild": "^0.28.2",
     "jest": "^30.5.2",
-    "typescript": "^4.5.3"
+    "typescript": "^6.0.3"
   },
   "module": "dist",
   "bugs": {
