@@ -19,3 +19,7 @@ coverage
 .cache
 lerna-debug.log
 packages/host/yarn-error.log
+
+# Playwright
+test-results/
+playwright-report/
