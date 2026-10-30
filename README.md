@@ -1,6 +1,4 @@
 > **Unofficial fork.** `wam-sdk` is a fork of [`@webaudiomodules/sdk`](https://www.npmjs.com/package/@webaudiomodules/sdk) maintained by [anouar-bm](https://github.com/anouar-bm/wam-sdk). It is not published or endorsed by the WebAudioModules working group; use `@webaudiomodules/sdk` unless you need this fork.
->
-> `0.0.13-fork.0` (dist-tag `beta`) ships the same runtime code as `@webaudiomodules/sdk@0.0.12`. Fixes land here first and are proposed upstream.
 
 # WebAudioModules SDK
 

@@ -1,1 +1,1 @@
-export default "2.0.0-alpha.7-fork.0";
+export default "2.0.0-beta.0";

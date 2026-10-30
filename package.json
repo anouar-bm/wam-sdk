@@ -1,6 +1,6 @@
 {
   "name": "wam-sdk",
-  "version": "0.0.13-fork.0",
+  "version": "0.1.0",
   "description": "Unofficial fork of @webaudiomodules/sdk (Web Audio Modules 2.0 SDK), maintained by anouar-bm",
   "type": "module",
   "main": "dist/index.js",
@@ -44,6 +44,6 @@
     "src"
   ],
   "dependencies": {
-    "wam-api": "^2.0.0-alpha.7-fork.0"
+    "wam-api": "^2.0.0-beta.0"
   }
 }
