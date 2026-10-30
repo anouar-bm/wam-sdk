@@ -60,6 +60,8 @@ export default class WamNode extends AudioWorkletNode {
 		this._messageId = 1;
 		/** @private @type {Record<number, (...args: any[]) => any>} */
 		this._pendingResponses = {};
+		/** @private @type {Record<number, (error: Error) => void>} */
+		this._pendingRejections = {};
 		/** @private @type {Record<number, () => any>} */
 		this._pendingEvents = {};
 		/** @private @type {boolean} */
@@ -86,16 +88,7 @@ export default class WamNode extends AudioWorkletNode {
 	 * @returns {Promise<WamParameterInfoMap>}
 	 */
 	async getParameterInfo(...parameterIds) {
-		const request = 'get/parameterInfo';
-		const id = this._generateMessageId();
-		return new Promise((resolve) => {
-			this._pendingResponses[id] = resolve;
-			this.port.postMessage({
-				id,
-				request,
-				content: { parameterIds },
-			});
-		});
+		return this._request('get/parameterInfo', { parameterIds });
 	}
 
 	/**
@@ -106,16 +99,7 @@ export default class WamNode extends AudioWorkletNode {
 	 * @returns {Promise<WamParameterDataMap>}
 	 */
 	async getParameterValues(normalized, ...parameterIds) {
-		const request = 'get/parameterValues';
-		const id = this._generateMessageId();
-		return new Promise((resolve) => {
-			this._pendingResponses[id] = resolve;
-			this.port.postMessage({
-				id,
-				request,
-				content: { normalized, parameterIds },
-			});
-		});
+		return this._request('get/parameterValues', { normalized, parameterIds });
 	}
 
 	/**
@@ -124,16 +108,7 @@ export default class WamNode extends AudioWorkletNode {
 	 * @returns {Promise<void>}
 	 */
 	async setParameterValues(parameterValues) {
-		const request = 'set/parameterValues';
-		const id = this._generateMessageId();
-		return new Promise((resolve) => {
-			this._pendingResponses[id] = resolve;
-			this.port.postMessage({
-				id,
-				request,
-				content: { parameterValues },
-			});
-		});
+		return this._request('set/parameterValues', { parameterValues });
 	}
 
 	/**
@@ -142,13 +117,8 @@ export default class WamNode extends AudioWorkletNode {
 	 * @returns {Promise<any>}
 	 */
 	async getState() {
-		const request = 'get/state';
 		// perhaps the only info to request from processor is param state?
-		const id = this._generateMessageId();
-		return new Promise((resolve) => {
-			this._pendingResponses[id] = resolve;
-			this.port.postMessage({ id, request });
-		});
+		return this._request('get/state');
 	}
 
 	/**
@@ -157,17 +127,8 @@ export default class WamNode extends AudioWorkletNode {
 	 * @param {any} state
 	 */
 	async setState(state) {
-		const request = 'set/state';
-		const id = this._generateMessageId();
 		// perhaps the only info to send to processor is param state?
-		return new Promise((resolve) => {
-			this._pendingResponses[id] = resolve;
-			this.port.postMessage({
-				id,
-				request,
-				content: { state },
-			});
-		});
+		return this._request('set/state', { state });
 	}
 
 	/**
@@ -175,12 +136,7 @@ export default class WamNode extends AudioWorkletNode {
 	 * @returns {Promise<number>}
 	 */
 	async getCompensationDelay() {
-		const request = 'get/compensationDelay';
-		const id = this._generateMessageId();
-		return new Promise((resolve) => {
-			this._pendingResponses[id] = resolve;
-			this.port.postMessage({ id, request });
-		});
+		return this._request('get/compensationDelay');
 	}
 
 	/**
@@ -241,14 +197,9 @@ export default class WamNode extends AudioWorkletNode {
 
 	/** From the main thread, clear all pending WamEvents. */
 	async clearEvents() {
-		const request = 'remove/events';
-		const id = this._generateMessageId();
 		const ids = Object.keys(this._pendingEvents);
 		if (ids.length) {
-			return new Promise((/** @type {(ids: string[]) => any} */resolve) => {
-				this._pendingResponses[id] = resolve;
-				this.port.postMessage({ id, request });
-			}).then((clearedIds) => {
+			return this._request('remove/events').then((/** @type {string[]} */clearedIds) => {
 				clearedIds.forEach((clearedId) => {
 					this._pendingEvents[clearedId]();
 					delete this._pendingEvents[clearedId];
@@ -291,13 +242,23 @@ export default class WamNode extends AudioWorkletNode {
 		});
 	}
 
-	/** Stop processing and remove the node from the graph. */
+	/**
+	 * Stop processing and remove the node from the graph.
+	 * Pending requests reject with an error; calling it again does nothing.
+	 */
 	destroy() {
+		if (this._destroyed) return;
+		this._destroyed = true;
 		if (this._audioToMainInterval) clearInterval(this._audioToMainInterval);
 		this.port.postMessage({ destroy: true });
 		this.port.close();
 		this.disconnect();
-		this._destroyed = true;
+		const error = new Error('WamNode destroyed before the request completed');
+		Object.values(this._pendingRejections).forEach((reject) => reject(error));
+		Object.values(this._pendingEvents).forEach((rejectEvent) => rejectEvent());
+		this._pendingResponses = {};
+		this._pendingRejections = {};
+		this._pendingEvents = {};
 	}
 
 	_generateMessageId() {
@@ -306,15 +267,28 @@ export default class WamNode extends AudioWorkletNode {
 	}
 
 	/**
+	 * Send a request to the processor and wait for its response.
+	 * Rejects if the node is destroyed before or while waiting.
+	 * @private
+	 * @param {string} request
+	 * @param {any} [content]
+	 * @returns {Promise<any>}
+	 */
+	_request(request, content) {
+		if (this._destroyed) return Promise.reject(new Error(`WamNode destroyed: cannot send '${request}'`));
+		const id = this._generateMessageId();
+		return new Promise((resolve, reject) => {
+			this._pendingResponses[id] = resolve;
+			this._pendingRejections[id] = reject;
+			this.port.postMessage(content === undefined ? { id, request } : { id, request, content });
+		});
+	}
+
+	/**
 	 * Post-constructor (asynchronous) initialization method.
 	 */
 	async _initialize() {
-		const request = 'initialize/processor';
-		const id = this._generateMessageId();
-		return new Promise((resolve) => {
-			this._pendingResponses[id] = resolve;
-			this.port.postMessage({ id, request });
-		});
+		return this._request('initialize/processor');
 	}
 
 	/**
@@ -329,6 +303,7 @@ export default class WamNode extends AudioWorkletNode {
 			const resolvePendingResponse = this._pendingResponses[id];
 			if (resolvePendingResponse) {
 				delete this._pendingResponses[id];
+				delete this._pendingRejections[id];
 				resolvePendingResponse(content);
 			}
 			// else console.log(`unhandled message | response: ${response} content: ${content}`);
