@@ -9,7 +9,9 @@
 const addFunctionModule = (audioWorklet, processorFunction, ...injection) => {
     const text = `(${processorFunction.toString()})(${injection.map((s) => JSON.stringify(s)).join(', ')});`
     const url = URL.createObjectURL(new Blob([text], { type: 'text/javascript' }));
-    return audioWorklet.addModule(url);
+    // The module is fetched by the time addModule settles, so the URL can be
+    // released on success and on failure.
+    return audioWorklet.addModule(url).finally(() => URL.revokeObjectURL(url));
 }
 
 export default addFunctionModule;
