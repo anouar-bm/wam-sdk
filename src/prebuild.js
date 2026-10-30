@@ -5,7 +5,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// apiVersion reports the wam-api release this SDK was built against (informational: hosts don't compare it).
+// WamEnv.apiVersion = the installed wam-api version (the API this SDK implements), e.g. "2.0.0-alpha.7-fork.0".
+// The "-fork.N" suffix is safe: hosts only read this string; plugin compatibility uses the descriptor's apiVersion ("2.0.0").
 const packageFilePath = path.join(__dirname, '../node_modules/wam-api/package.json');
 const { version } = JSON.parse(fs.readFileSync(packageFilePath, 'utf-8'));
 
