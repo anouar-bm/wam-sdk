@@ -33,7 +33,7 @@
     "@types/jest": "^30.0.0",
     "@webaudiomodules/api": "^2.0.0-alpha.6",
     "dts-bundle-generator": "^6.2.0",
-    "esbuild": "^0.14.2",
+    "esbuild": "^0.28.2",
     "jest": "^30.5.2",
     "typescript": "^4.5.3"
   },
