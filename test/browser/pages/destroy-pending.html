@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="modes" content="plain isolated">
+	<title>destroy-pending</title>
+	<script type="module">
+		import { createGainWam, settlesWithin } from '../fixtures/gain-wam.js';
+		import { runPageTest } from '../lib/audit.js';
+
+		// destroy() must reject requests that are in flight, reject requests
+		// made afterwards, be safe to call twice, and not leave unhandled
+		// rejections from the SDK's own internal promises.
+		async function outcome(promise, what) {
+			try {
+				await settlesWithin(promise, 1000, what);
+				return 'resolved';
+			} catch (error) {
+				if (/did not settle/.test(error.message)) return 'hung';
+				return error instanceof Error ? `rejected: ${error.message}` : `rejected with non-Error ${error}`;
+			}
+		}
+
+		runPageTest(async () => {
+			const unhandled = [];
+			const onUnhandled = (event) => unhandled.push(String(event.reason && event.reason.message || event.reason));
+			window.addEventListener('unhandledrejection', onUnhandled);
+			try {
+				const context = new OfflineAudioContext({ numberOfChannels: 1, length: 128, sampleRate: 48000 });
+				const wam = await createGainWam(context);
+				wam.audioNode.connectEvents('some-other-instance');
+				wam.audioNode.scheduleEvents({ type: 'wam-midi', time: 10, data: { bytes: [0x90, 60, 100] } });
+				const pending = outcome(wam.audioNode.getState(), 'getState() pending at destroy()');
+				wam.audioNode.destroy();
+				wam.audioNode.destroy();
+				const during = await pending;
+				const after = await outcome(wam.audioNode.getParameterValues(false), 'getParameterValues() after destroy()');
+				// Give stray internal rejections a chance to be reported.
+				await new Promise((resolve) => setTimeout(resolve, 100));
+
+				if (!during.startsWith('rejected: ')) return { pass: false, message: `request pending at destroy(): ${during}, expected rejection with an Error` };
+				if (!after.startsWith('rejected: ')) return { pass: false, message: `request after destroy(): ${after}, expected rejection with an Error` };
+				if (unhandled.length) return { pass: false, message: `unhandled rejection(s): ${unhandled.join('; ')}` };
+				return { pass: true, message: `pending ${during}; after ${after}; double destroy() safe; no unhandled rejections` };
+			} finally {
+				window.removeEventListener('unhandledrejection', onUnhandled);
+			}
+		});
+	</script>
+</head>
+<body></body>
+</html>
