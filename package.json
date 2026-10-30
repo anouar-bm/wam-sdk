@@ -1,7 +1,7 @@
 {
-  "name": "@webaudiomodules/sdk",
-  "version": "0.0.12",
-  "description": "WebAudioModules Plugin SDK",
+  "name": "wam-sdk",
+  "version": "0.0.13-fork.0",
+  "description": "Unofficial fork of @webaudiomodules/sdk (Web Audio Modules 2.0 SDK), maintained by anouar-bm",
   "type": "module",
   "main": "dist/index.js",
   "types": "src/index.d.ts",
@@ -23,7 +23,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/%40webaudiomodules/sdk.git"
+    "url": "git+https://github.com/anouar-bm/wam-sdk.git"
   },
   "scriptPreprocessor": "node_modules/babel-jest",
   "devDependencies": {
@@ -38,7 +38,11 @@
   },
   "module": "dist",
   "bugs": {
-    "url": "https://github.com/%40webaudiomodules/sdk/issues"
+    "url": "https://github.com/anouar-bm/wam-sdk/issues"
   },
-  "homepage": "https://github.com/%40webaudiomodules/sdk#readme"
+  "homepage": "https://github.com/anouar-bm/wam-sdk#readme",
+  "files": [
+    "dist",
+    "src"
+  ]
 }
