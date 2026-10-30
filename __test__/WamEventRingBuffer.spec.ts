@@ -6,7 +6,7 @@ import { shuffleArray, ensureTextEncoderDecoder } from './testUtilities';
 import {
 	WamEvent, WamAutomationEvent, WamTransportEvent,
 	WamMidiEvent, WamMpeEvent, WamSysexEvent, WamOscEvent, WamInfoEvent
-} from '@webaudiomodules/api';
+} from 'wam-api';
 
 import getRingBuffer from '../src/RingBuffer.js';
 import getWamEventRingBuffer from '../src/WamEventRingBuffer.js';

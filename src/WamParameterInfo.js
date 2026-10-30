@@ -1,8 +1,8 @@
-/** @typedef {import('@webaudiomodules/api').WamParameterInfo} IWamParameterInfo */
-/** @typedef {typeof import('@webaudiomodules/api').WamParameterInfo} WamParameterInfoConstructor */
-/** @typedef {import('@webaudiomodules/api').WamParameterType} WamParameterType */
-/** @typedef {import('@webaudiomodules/api').WamParameterConfiguration} WamParameterConfiguration */
-/** @typedef {import('@webaudiomodules/api').AudioWorkletGlobalScope} AudioWorkletGlobalScope */
+/** @typedef {import('wam-api').WamParameterInfo} IWamParameterInfo */
+/** @typedef {typeof import('wam-api').WamParameterInfo} WamParameterInfoConstructor */
+/** @typedef {import('wam-api').WamParameterType} WamParameterType */
+/** @typedef {import('wam-api').WamParameterConfiguration} WamParameterConfiguration */
+/** @typedef {import('wam-api').AudioWorkletGlobalScope} AudioWorkletGlobalScope */
 /** @typedef {import('./types').WamSDKBaseModuleScope} WamSDKBaseModuleScope */
 
 /**

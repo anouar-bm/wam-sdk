@@ -16,7 +16,7 @@ const pathToWam = '../index.js';
 	const [hostGroupId] = await initializeWamHost(audioContext);
 
 	// Load the WAM
-	/** @type {{ default: typeof import('@webaudiomodules/api').WebAudioModule }} */
+	/** @type {{ default: typeof import('wam-api').WebAudioModule }} */
 	const { default: WAM } = await import(pathToWam);
 
 	// Create a new instance of the plugin

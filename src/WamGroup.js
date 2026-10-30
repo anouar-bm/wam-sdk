@@ -1,6 +1,6 @@
-/** @typedef {import('@webaudiomodules/api').WamProcessor} IWamProcessor */
-/** @typedef {import('@webaudiomodules/api').AudioWorkletGlobalScope} AudioWorkletGlobalScope */
-/** @typedef {import('@webaudiomodules/api').WamEvent} WamEvent */
+/** @typedef {import('wam-api').WamProcessor} IWamProcessor */
+/** @typedef {import('wam-api').AudioWorkletGlobalScope} AudioWorkletGlobalScope */
+/** @typedef {import('wam-api').WamEvent} WamEvent */
 /** @typedef {import('./types').WamGroup} IWamGroup */
 
 /**

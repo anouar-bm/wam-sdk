@@ -1,6 +1,6 @@
-/** @typedef {import('@webaudiomodules/api').WamDescriptor} WamDescriptor */
-/** @typedef {import('@webaudiomodules/api').WamNode} WamNode */
-/** @template T @typedef {import('@webaudiomodules/api').WebAudioModule} IWebAudioModule<T> */
+/** @typedef {import('wam-api').WamDescriptor} WamDescriptor */
+/** @typedef {import('wam-api').WamNode} WamNode */
+/** @template T @typedef {import('wam-api').WebAudioModule} IWebAudioModule<T> */
 
 /** @implements {IWebAudioModule<WamNode>} */
 class WebAudioModule {
