@@ -1,10 +1,8 @@
 name: Benchmark
 
-# Not run on every push: a full comparison takes several minutes and most
-# changes don't touch performance (see bench/README.md, "Where it runs").
-#   - pull request: add the label `run-benchmark` to compare base and head
-#   - release: compare with the previous release tag, attach the report
 on:
+  push:
+    branches: [master]
   pull_request:
     types: [labeled]
   release:
@@ -14,9 +12,13 @@ permissions:
   contents: read
 
 jobs:
-  pull-request:
-    name: Benchmark PR against its base
-    if: ${{ github.event_name == 'pull_request' && github.event.label.name == 'run-benchmark' }}
+  compare:
+    # Merge to master: the new master against the previous master tip.
+    # Labeled PR: the PR head against its base.
+    name: Benchmark against ${{ github.event_name == 'push' && 'previous master' || 'PR base' }}
+    if: >-
+      ${{ (github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000')
+      || (github.event_name == 'pull_request' && github.event.label.name == 'run-benchmark') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -24,7 +26,7 @@ jobs:
           path: candidate
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.base.sha }}
+          ref: ${{ github.event_name == 'push' && github.event.before || github.event.pull_request.base.sha }}
           path: base
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:

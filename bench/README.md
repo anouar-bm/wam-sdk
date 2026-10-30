@@ -80,11 +80,17 @@ treats ratios between 0.7 and 1.5 as noise on GitHub Actions.
 ## Where it runs
 
 - **Locally,** whenever a change might affect performance.
-- **In CI, on demand:** adding the label `run-benchmark` to a pull request
-  builds the PR's base and head in one job, runs both, and writes the report to
-  the job summary.
+- **On every merge to `master`:** the new `master` is compared with the
+  previous `master` tip in one job, and the report goes to the job summary.
+  This follows Firefox, whose `webaudio` benchmark runs after each landing on
+  trunk (`run-on-projects: [trunk]` in
+  `taskcluster/kinds/browsertime/desktop.yml`) and compares each push with the
+  previous ones, rather than running on every patch under review.
+- **On a pull request, on demand:** adding the label `run-benchmark` compares
+  the PR head with its base before merging. This is the equivalent of
+  Firefox's Try perf runs.
 - **On release:** the published release is compared with the previous release,
   and the report is attached to the release.
 
-It is not run on every push. That costs minutes per PR, and most PRs don't
-touch performance.
+Pushes to PR branches don't run it. A comparison takes a few minutes, and most
+changes under review don't touch performance.
