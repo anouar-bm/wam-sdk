@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>blob-url-leak</title>
+	<script type="module">
+		import { addFunctionModule } from '../../../dist/index.js';
+		import { createGainWam } from '../fixtures/gain-wam.js';
+		import { runPageTest } from '../lib/audit.js';
+
+		// Every Blob URL the SDK creates to load worklet code must be revoked
+		// once loading has finished, whether loading succeeded or failed.
+		runPageTest(async () => {
+			const created = new Set();
+			const createObjectURL = URL.createObjectURL;
+			const revokeObjectURL = URL.revokeObjectURL;
+			URL.createObjectURL = (object) => {
+				const url = createObjectURL.call(URL, object);
+				created.add(url);
+				return url;
+			};
+			URL.revokeObjectURL = (url) => {
+				created.delete(url);
+				return revokeObjectURL.call(URL, url);
+			};
+			try {
+				const context = new OfflineAudioContext({ numberOfChannels: 1, length: 128, sampleRate: 48000 });
+				await createGainWam(context);
+				if (created.size) return { pass: false, message: `${created.size} Blob URL(s) never revoked after successful loading` };
+
+				// addModule rejects only for scripts that fail to parse: a module that
+				// throws while running still resolves (checked in Chromium, Firefox
+				// and WebKit). addFunctionModule calls toString(), so this injects
+				// invalid syntax.
+				const unparsableModule = { toString: () => 'this is not ( valid javascript' };
+				const failed = await addFunctionModule(context.audioWorklet, unparsableModule).then(() => false, () => true);
+				if (!failed) return { pass: false, message: 'addModule of an unparsable module did not reject; failure path not exercised' };
+				if (created.size) return { pass: false, message: `${created.size} Blob URL(s) never revoked after failed loading` };
+			} finally {
+				URL.createObjectURL = createObjectURL;
+				URL.revokeObjectURL = revokeObjectURL;
+			}
+			return { pass: true, message: 'all Blob URLs revoked after successful and failed loading' };
+		});
+	</script>
+</head>
+<body></body>
+</html>
