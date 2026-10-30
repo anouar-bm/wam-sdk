@@ -29,6 +29,7 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test -- --runInBand
+      - run: node --test bench/compare.test.mjs
 
   browser:
     name: Browser tests (Chromium, Firefox)
