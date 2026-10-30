@@ -28,8 +28,23 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      - run: npm run typecheck
       - run: npm test -- --runInBand
       - run: node --test bench/compare.test.mjs
+      # Install the packed tarball like a user would: it must contain only dist/ and src/,
+      # and its type definitions must compile in a strict TypeScript project.
+      - name: Package contents and consumer types
+        run: |
+          npm pack --pack-destination "$RUNNER_TEMP"
+          tarball=$(ls "$RUNNER_TEMP"/*.tgz)
+          if tar -tzf "$tarball" | grep -vE '^package/(dist/|src/|package\.json$|README\.md$)'; then
+            echo "Unexpected files in the package"; exit 1
+          fi
+          mkdir "$RUNNER_TEMP/consumer" && cd "$RUNNER_TEMP/consumer"
+          echo '{"type":"module","private":true}' > package.json
+          npm install --ignore-scripts "$tarball" @webaudiomodules/api "typescript@$(node -p "require('$GITHUB_WORKSPACE/package.json').devDependencies.typescript")"
+          printf 'import { WebAudioModule, WamNode, apiVersion } from "@webaudiomodules/sdk";\nexport type M = WebAudioModule;\nexport type N = WamNode;\nexport const v: string = apiVersion;\n' > index.ts
+          npx tsc --noEmit --strict --lib es2022,dom --module esnext --moduleResolution bundler index.ts
 
   browser:
     name: Browser tests (Chromium, Firefox)
