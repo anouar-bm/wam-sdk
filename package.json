@@ -5,6 +5,10 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "src/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
     "prebuild": "node src/prebuild.js",
     "build": "esbuild src/index.js --target=esnext --bundle --sourcemap --outdir=dist --format=esm",
