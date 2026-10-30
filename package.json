@@ -9,7 +9,9 @@
     "prebuild": "node src/prebuild.js",
     "build": "esbuild src/index.js --target=esnext --bundle --sourcemap --outdir=dist --format=esm",
     "test": "jest",
-    "test:browser": "npm run build && playwright test --project=chromium --project=firefox"
+    "test:browser": "npm run build && playwright test --project=chromium --project=firefox",
+    "bench:micro": "node bench/micro.mjs",
+    "bench:browser": "npm run build && node bench/run.mjs"
   },
   "keywords": [
     "webaudio",

@@ -23,3 +23,4 @@ packages/host/yarn-error.log
 # Playwright
 test-results/
 playwright-report/
+bench-results.json

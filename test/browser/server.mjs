@@ -1,13 +1,22 @@
 // Static file server for the browser tests, rooted at the SDK repository.
 // Pages requested with `?isolated` get COOP/COEP headers so that
 // SharedArrayBuffer is available (crossOriginIsolated === true).
+// With BASE_DIR set, paths under /base/ are served from that directory
+// instead (a second SDK checkout, used by the benchmarks to compare builds).
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { extname, join, normalize, sep } from 'node:path';
+import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
+const baseRoot = process.env.BASE_DIR ? resolve(process.env.BASE_DIR) : undefined;
 const port = Number(process.env.PORT) || 8123;
+
+/** Resolve a URL path to a file inside `dir`, or undefined if it escapes it. */
+function inside(dir, urlPath) {
+	const path = normalize(join(dir, urlPath));
+	return path.startsWith(dir.endsWith(sep) ? dir : dir + sep) ? path : undefined;
+}
 const contentTypes = {
 	'.html': 'text/html; charset=utf-8',
 	'.js': 'text/javascript; charset=utf-8',
@@ -18,8 +27,11 @@ const contentTypes = {
 
 createServer(async (request, response) => {
 	const url = new URL(request.url, `http://${request.headers.host}`);
-	const path = normalize(join(root, decodeURIComponent(url.pathname)));
-	if (!path.startsWith(root.endsWith(sep) ? root : root + sep)) {
+	const urlPath = decodeURIComponent(url.pathname);
+	const path = baseRoot && urlPath.startsWith('/base/')
+		? inside(baseRoot, urlPath.slice('/base'.length))
+		: inside(root, urlPath);
+	if (!path) {
 		response.writeHead(403).end('Forbidden');
 		return;
 	}
