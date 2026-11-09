@@ -30,6 +30,7 @@ jobs:
       - run: npm run build
       - run: npm run typecheck
       - run: npm test -- --runInBand
+      - run: node --test bench/compare.test.mjs
       # Install the packed tarball like a user would: it must contain only dist/ and src/,
       # and its type definitions must compile in a strict TypeScript project.
       - name: Package contents and consumer types
