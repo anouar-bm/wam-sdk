@@ -79,7 +79,10 @@ export const WamParameterInterpolator: {
 };
 
 // eslint-disable-next-line no-undef
-export type TypedArrayConstructor = Int8ArrayConstructor | Uint8ArrayConstructor | Uint8ClampedArrayConstructor | Int16ArrayConstructor | Uint16ArrayConstructor | Int32ArrayConstructor | Uint32ArrayConstructor | Float32ArrayConstructor | Float64ArrayConstructor | BigInt64ArrayConstructor | BigUint64ArrayConstructor;
+export type TypedArrayConstructor = (Int8ArrayConstructor | Uint8ArrayConstructor | Uint8ClampedArrayConstructor | Int16ArrayConstructor | Uint16ArrayConstructor | Int32ArrayConstructor | Uint32ArrayConstructor | Float32ArrayConstructor | Float64ArrayConstructor | BigInt64ArrayConstructor | BigUint64ArrayConstructor)
+	// Ring buffers build their views on a SharedArrayBuffer. TS >= 5.7 keeps that overload generic, and generic
+	// overloads are dropped when calling a union, so state the one signature the SDK uses.
+	& { new (buffer: ArrayBufferLike, byteOffset?: number, length?: number): TypedArray };
 
 // eslint-disable-next-line no-undef
 export type TypedArray = Int8Array | Uint8Array | Uint8ClampedArray | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | Float64Array | BigInt64Array | BigUint64Array;

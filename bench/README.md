@@ -50,9 +50,16 @@ counts.
   exactly real time.
 - **WAM overhead** = WAM cost − native cost, per node, in the same browser and
   page mode.
-- **candidate/base** is a ratio of medians with a 95% bootstrap interval
-  (seeded, so a report can be reproduced from its JSON). A change is called
-  faster or slower only when the interval excludes 1.
+- **candidate/base** is a ratio of medians with a bootstrap interval (seeded,
+  so a report can be reproduced from its JSON). One report compares many cases,
+  so each interval is widened for the number of comparisons (Bonferroni: 28
+  cases → 99.8% each, keeping a 5% false-alarm chance for the whole report).
+  A change is called faster or slower only when the interval excludes 1 **and**
+  the ratio moves by at least 5%. With plain 95% intervals, about 1.4 false
+  alarms per report are expected. One appeared when CI compared two identical
+  SDK builds (`WAM ×8, 500 ev/s`: 1.214 [1.015–1.521] "slower"), and it reads
+  "no clear change" with the correction. `bench/compare.test.mjs` checks that
+  identical data stays "no clear change" and that ±30% is still detected.
 - The page measures its own `performance.now()` resolution. A case shorter
   than 50 timer steps is flagged ⏱ and its ratio should be ignored. Measured on
   30 Oct 2026: Chromium 100 µs plain and 5 µs isolated; Firefox 20 µs in both.
