@@ -10,9 +10,14 @@
 //   (1,000,000 µs/s = exactly real time), from the median.
 // - WAM overhead = WAM cost per node − native GainNode cost per node, same
 //   browser and same page mode (timer resolution differs between modes).
-// - candidate/base = ratio of medians, with a 95% bootstrap confidence
-//   interval. A change is only called faster/slower when the interval
-//   excludes 1; otherwise it is reported as no clear change.
+// - candidate/base = ratio of medians, with a bootstrap confidence interval.
+//   A report compares many cases at once, so each interval is widened for
+//   the number of comparisons (Bonferroni): with 28 cases each one uses
+//   99.8%, which keeps the chance of any false "faster/slower" in the whole
+//   report at about 5%. Without it, ~1.4 false alarms per report are
+//   expected, and one was seen comparing two identical SDK builds in CI.
+//   A change is called faster/slower only when its interval excludes 1 and
+//   the ratio moves by at least MIN_EFFECT; otherwise "no clear change".
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
@@ -22,7 +27,12 @@ const fmt = (x, digits = 2) => (x === undefined || Number.isNaN(x) ? '–' : x.t
 
 /** Renders shorter than this many timer steps are dominated by the clock. */
 const MIN_RESOLUTION_STEPS = 50;
-const BOOTSTRAP_RESAMPLES = 2000;
+/** Enough resamples for stable tails at Bonferroni-adjusted levels (~0.1%). */
+const BOOTSTRAP_RESAMPLES = 10000;
+/** Family-wise false-alarm rate for one whole report. */
+const FAMILY_ALPHA = 0.05;
+/** Smallest ratio change reported as faster/slower, even if significant. */
+const MIN_EFFECT = 0.05;
 
 export const caseName = (s) => (s.kind === 'native'
 	? `native GainNode ×${s.nodes}`
@@ -41,15 +51,23 @@ function seededRandom(seed) {
 }
 
 /**
- * 95% percentile-bootstrap interval for median(candidate) / median(base):
- * resample each set with replacement and take the 2.5% and 97.5% ratios.
+ * Percentile-bootstrap interval for median(candidate) / median(base):
+ * resample each set with replacement and take the alpha/2 and 1 − alpha/2
+ * ratios (alpha = 0.05 gives the usual 95% interval).
  */
-export function ratioInterval(base, candidate, random = seededRandom(1)) {
+export function ratioInterval(base, candidate, alpha = 0.05, random = seededRandom(1)) {
 	const resample = (values) => values.map(() => values[Math.floor(random() * values.length)]);
 	const ratios = [];
 	for (let i = 0; i < BOOTSTRAP_RESAMPLES; i++) ratios.push(median(resample(candidate)) / median(resample(base)));
 	ratios.sort((a, b) => a - b);
-	return [quantile(ratios, 0.025), quantile(ratios, 0.975)];
+	return [quantile(ratios, alpha / 2), quantile(ratios, 1 - alpha / 2)];
+}
+
+/** "faster" / "slower" only for a significant change of at least MIN_EFFECT. */
+export function verdict(ratio, [low, high]) {
+	if (high < 1 && ratio <= 1 - MIN_EFFECT) return 'faster';
+	if (low > 1 && ratio >= 1 + MIN_EFFECT) return 'slower';
+	return 'no clear change';
 }
 
 /** @param {any[]} samples @param {number} seconds */
@@ -90,12 +108,17 @@ export function report(rows, meta = {}) {
 	const sections = [...new Set(rows.map((r) => `${r.browser}|${r.mode}`))];
 	const sdks = [...new Set(rows.map((r) => r.sdk))];
 	const compare = sdks.includes('base') && sdks.includes('candidate');
+	const findBase = (r) => rows.find((b) => b.sdk === 'base' && b.browser === r.browser && b.mode === r.mode
+		&& b.kind === r.kind && b.nodes === r.nodes && b.eventsPerSecond === r.eventsPerSecond);
+	const comparisons = rows.filter((r) => r.sdk === 'candidate' && r.runs && findBase(r)?.runs).length;
+	const alpha = FAMILY_ALPHA / Math.max(1, comparisons);
+	const level = `${fmt(100 * (1 - alpha), 1)}%`;
 	for (const section of sections) {
 		const [browser, mode] = section.split('|');
 		const resolution = meta.timerResolutionMs?.[section];
 		lines.push(`\n### ${browser}, ${mode === 'isolated' ? 'SharedArrayBuffer transport (cross-origin isolated)' : 'MessagePort transport'}`);
 		if (resolution !== undefined) lines.push(`\nTimer resolution measured in page: ${fmt(resolution * 1000, 1)} µs.`);
-		lines.push(`\n| case | sdk | runs | median ms | min ms | p90 ms | µs/s per node | WAM overhead µs/s per node | init ms/WAM |${compare ? ' candidate/base [95% CI] |' : ''}`);
+		lines.push(`\n| case | sdk | runs | median ms | min ms | p90 ms | µs/s per node | WAM overhead µs/s per node | init ms/WAM |${compare ? ` candidate/base [${level} CI] |` : ''}`);
 		lines.push(`|---|---|--:|--:|--:|--:|--:|--:|--:|${compare ? '---|' : ''}`);
 		for (const r of rows.filter((x) => `${x.browser}|${x.mode}` === section)) {
 			const native = rows.find((n) => n.kind === 'native' && n.nodes === r.nodes && n.browser === r.browser
@@ -105,12 +128,11 @@ export function report(rows, meta = {}) {
 			if (r.invalid.length) notes.push(`⚠️ ${r.invalid.length} invalid: ${r.invalid[0]}`);
 			if (resolution && r.medianMs < MIN_RESOLUTION_STEPS * resolution) notes.push('⏱ near timer resolution');
 			let change = '';
-			const base = rows.find((b) => b.sdk === 'base' && b.browser === r.browser && b.mode === r.mode
-				&& b.kind === r.kind && b.nodes === r.nodes && b.eventsPerSecond === r.eventsPerSecond);
+			const base = findBase(r);
 			if (compare && r.sdk === 'candidate' && base?.runs && r.runs) {
-				const [low, high] = ratioInterval(base.renders, r.renders);
-				const verdict = high < 1 ? 'faster' : low > 1 ? 'slower' : 'no clear change';
-				change = `${fmt(r.medianMs / base.medianMs, 3)} [${fmt(low, 3)}–${fmt(high, 3)}] ${verdict}`;
+				const ratio = r.medianMs / base.medianMs;
+				const interval = ratioInterval(base.renders, r.renders, alpha);
+				change = `${fmt(ratio, 3)} [${fmt(interval[0], 3)}–${fmt(interval[1], 3)}] ${verdict(ratio, interval)}`;
 			}
 			lines.push(`| ${caseName(r)}${notes.length ? ` ${notes.join(' ')}` : ''} | ${r.sdk} | ${r.runs} | ${fmt(r.medianMs)} | ${fmt(r.minMs)} | ${fmt(r.p90Ms)} | ${fmt(r.usPerSecondPerNode, 1)} | ${fmt(overhead, 1)} | ${fmt(r.initMsPerWam)} |${compare ? ` ${change} |` : ''}`);
 		}
@@ -119,8 +141,9 @@ export function report(rows, meta = {}) {
 		+ 'Init includes the cold first instance, so ×1 cases show a higher init than ×8/×32. '
 		+ 'Offline rendering measures processing cost only, not real-time glitches, latency or main-thread scheduling.');
 	if (compare) {
-		lines.push('Ratio < 1 = candidate faster; a change is only called faster/slower when its 95% interval excludes 1. '
-			+ 'This report never fails the build.');
+		lines.push(`Ratio < 1 = candidate faster. Intervals are ${level} (Bonferroni over ${comparisons} comparisons, `
+			+ `${100 * FAMILY_ALPHA}% for the whole report); a change is only called faster/slower when its interval `
+			+ `excludes 1 and it moves by at least ${100 * MIN_EFFECT}%. This report never fails the build.`);
 	}
 	return lines.join('\n');
 }

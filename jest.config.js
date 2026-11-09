@@ -115,9 +115,10 @@ export default {
   // rootDir: undefined,
 
   // A list of paths to directories that Jest should use to search for files in
-  // roots: [
-  //   "<rootDir>"
-  // ],
+  // bench/ holds node:test files, run separately in CI
+  roots: [
+    "<rootDir>/__test__"
+  ],
 
   // Allows you to use a custom runner instead of Jest's default test runner
   // runner: "jest-runner",
@@ -132,7 +133,8 @@ export default {
   // snapshotSerializers: [],
 
   // The test environment that will be used for testing
-  testEnvironment: "jsdom",
+  // The specs exercise ring buffers and the interpolator only; DOM code runs in the browser suite (test:browser).
+  testEnvironment: "node",
 
   // Options that will be passed to the testEnvironment
   // testEnvironmentOptions: {},
@@ -168,7 +170,7 @@ export default {
 
   // A map from regular expressions to paths to transformers
   transform: {
-    "^.+\\.(ts|js)x?$": "esbuild-jest"
+    "^.+\\.(ts|js)x?$": "@swc/jest"
   }
 
   // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
